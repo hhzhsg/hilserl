@@ -19,88 +19,144 @@ from experiments.usb_pickup_insertion.wrapper import USBEnv, GripperPenaltyWrapp
 
 
 class EnvConfig(DefaultEnvConfig):
-    SERVER_URL: str = "http://127.0.0.2:5000/"
+    SERVER_URL: str = "http://192.168.2.222:5000/"
     REALSENSE_CAMERAS = {
         "wrist_1": {
-            "serial_number": "127122270350",
-            "dim": (1280, 720),
+            "serial_number": "148522071365",
+            "dim": (640, 480),
             "exposure": 10500,
         },
         "wrist_2": {
-            "serial_number": "127122270146",
-            "dim": (1280, 720),
+            "serial_number": "152122076640",
+            "dim": (640, 480),
             "exposure": 10500,
         },
-        "side_policy": {
-            "serial_number": "130322274175",
-            "dim": (1280, 720),
-            "exposure": 13000,
-        },
-        "side_classifier": {
-            "serial_number": "130322274175",
-            "dim": (1280, 720),
-            "exposure": 13000,
+        # 新增全局相机
+        "global": {
+            "serial_number": "152122079499",
+            "dim": (640, 480),
+            "exposure": 10500, 
         },
     }
-    IMAGE_CROP = {"wrist_1": lambda img: img[50:-200, 200:-200],
-                  "wrist_2": lambda img: img[:-200, 200:-200],
-                  "side_policy": lambda img: img[250:500, 350:650],
-                  "side_classifier": lambda img: img[270:398, 500:628]}
-    TARGET_POSE = np.array([0.553,0.1769683108549487,0.25097833796596336, np.pi, 0, -np.pi/2])
-    RESET_POSE = TARGET_POSE + np.array([0, 0.03, 0.05, 0, 0, 0])
-    ACTION_SCALE = np.array([0.015, 0.1, 1])
-    RANDOM_RESET = True
+    IMAGE_CROP = {
+        "wrist_1": lambda img: img[139:459, 111:506],
+        "wrist_2": lambda img: img,
+        "global": lambda img: img[90:441, 72:543],
+    }
+    TARGET_POSE = np.array(
+        [
+            0.407108,
+            -0.081856,
+            0.206891,
+            3.1099675,
+            0.0146619,
+            -0.0078615,
+        ]
+    )
+    RESET_POSE = TARGET_POSE + np.array([-0.0, -0.0, 0.0, 0.0, 0.3, -0.0])
+    ACTION_SCALE = np.array([0.15, 0.15, 1])
+    RANDOM_RESET = False
     DISPLAY_IMAGE = True
-    RANDOM_XY_RANGE = 0.01
-    RANDOM_RZ_RANGE = 0.1
-    ABS_POSE_LIMIT_HIGH = TARGET_POSE + np.array([0.03, 0.06, 0.05, 0.1, 0.1, 0.3])
-    ABS_POSE_LIMIT_LOW = TARGET_POSE - np.array([0.03, 0.01, 0.03, 0.1, 0.1, 0.3])
+    RANDOM_XY_RANGE = 0.1
+    RANDOM_Z_RANGE = 0.1
+    RANDOM_RXY_RANGE = np.pi / 12
+    RANDOM_RZ_RANGE = np.pi / 6
+    XY_BORDER = 0.6
+    Z_BORDER_LOW = 0.6
+    Z_BORDER_HIGH = 0.6
+
+    # # 定义下界 (Low Limit)
+    # ABS_POSE_LIMIT_LOW = np.array(
+    #     [
+    #         TARGET_POSE[0] - XY_BORDER,    # X轴最小能到哪
+    #         TARGET_POSE[1] - XY_BORDER,    # Y轴最小能到哪
+    #         TARGET_POSE[2] - Z_BORDER_LOW, # Z轴最低能到哪 (别太低，小心撞桌子)
+    #         TARGET_POSE[3] - RANDOM_RXY_RANGE,          # 角度限制 (弧度)
+    #         TARGET_POSE[4] - RANDOM_RXY_RANGE,
+    #         TARGET_POSE[5] - RANDOM_RZ_RANGE,
+    #     ]
+    # )
+    # # 定义上界 (High Limit)
+    # ABS_POSE_LIMIT_HIGH = np.array(
+    #     [
+    #         TARGET_POSE[0] + XY_BORDER,    # X轴最大能到哪
+    #         TARGET_POSE[1] + XY_BORDER,    # Y轴最大能到哪
+    #         TARGET_POSE[2] + Z_BORDER_HIGH,# Z轴最高能到哪
+    #         TARGET_POSE[3] + RANDOM_RXY_RANGE,
+    #         TARGET_POSE[4] + RANDOM_RXY_RANGE,
+    #         TARGET_POSE[5] + RANDOM_RZ_RANGE,
+    #     ]
+    # )
+    
+    # 定义下界 (Low Limit)
+    ABS_POSE_LIMIT_LOW = np.array(
+        [
+            0.4,
+            -0.3,
+            0.03,
+            TARGET_POSE[3] - RANDOM_RXY_RANGE,          # 角度限制 (弧度)
+            TARGET_POSE[4] - RANDOM_RXY_RANGE,
+            TARGET_POSE[5] - RANDOM_RZ_RANGE,
+        ]
+    )
+    # 定义上界 (High Limit)
+    ABS_POSE_LIMIT_HIGH = np.array(
+        [
+            0.7,
+            0.2,
+            0.3,
+            TARGET_POSE[3] + RANDOM_RXY_RANGE,
+            TARGET_POSE[4] + RANDOM_RXY_RANGE,
+            TARGET_POSE[5] + RANDOM_RZ_RANGE,
+        ]
+    )
+    
     COMPLIANCE_PARAM = {
         "translational_stiffness": 2000,
         "translational_damping": 89,
         "rotational_stiffness": 150,
         "rotational_damping": 7,
         "translational_Ki": 0,
-        "translational_clip_x": 0.006,
-        "translational_clip_y": 0.0059,
-        "translational_clip_z": 0.0035,
+        "translational_clip_x": 0.005,
+        "translational_clip_y": 0.005,
+        "translational_clip_z": 0.005,
         "translational_clip_neg_x": 0.005,
         "translational_clip_neg_y": 0.005,
-        "translational_clip_neg_z": 0.0035,
-        "rotational_clip_x": 0.02,
-        "rotational_clip_y": 0.02,
-        "rotational_clip_z": 0.015,
-        "rotational_clip_neg_x": 0.02,
-        "rotational_clip_neg_y": 0.02,
-        "rotational_clip_neg_z": 0.015,
+        "translational_clip_neg_z": 0.005,
+        "rotational_clip_x": 0.05,
+        "rotational_clip_y": 0.05,
+        "rotational_clip_z": 0.02,
+        "rotational_clip_neg_x": 0.05,
+        "rotational_clip_neg_y": 0.05,
+        "rotational_clip_neg_z": 0.02,
         "rotational_Ki": 0,
     }
     PRECISION_PARAM = {
-        "translational_stiffness": 2000,
+        "translational_stiffness": 3000,
         "translational_damping": 89,
-        "rotational_stiffness": 150,
-        "rotational_damping": 7,
-        "translational_Ki": 0.0,
+        "rotational_stiffness": 300,
+        "rotational_damping": 9,
+        "translational_Ki": 0.1,
         "translational_clip_x": 0.01,
         "translational_clip_y": 0.01,
         "translational_clip_z": 0.01,
         "translational_clip_neg_x": 0.01,
         "translational_clip_neg_y": 0.01,
         "translational_clip_neg_z": 0.01,
-        "rotational_clip_x": 0.03,
-        "rotational_clip_y": 0.03,
-        "rotational_clip_z": 0.03,
-        "rotational_clip_neg_x": 0.03,
-        "rotational_clip_neg_y": 0.03,
-        "rotational_clip_neg_z": 0.03,
-        "rotational_Ki": 0.0,
+        "rotational_clip_x": 0.05,
+        "rotational_clip_y": 0.05,
+        "rotational_clip_z": 0.05,
+        "rotational_clip_neg_x": 0.05,
+        "rotational_clip_neg_y": 0.05,
+        "rotational_clip_neg_z": 0.05,
+        "rotational_Ki": 0.1,
     }
-    MAX_EPISODE_LENGTH = 120
+    MAX_EPISODE_LENGTH = 150
 
 
 class TrainConfig(DefaultTrainingConfig):
-    image_keys = ["side_policy", "wrist_1", "wrist_2"]
-    classifier_keys = ["side_classifier"]
+    image_keys = ("wrist_1", "wrist_2", "global")
+    classifier_keys = ["wrist_1", "wrist_2", "global"]
     proprio_keys = ["tcp_pose", "tcp_vel", "tcp_force", "tcp_torque", "gripper_pose"]
     checkpoint_period = 2000
     cta_ratio = 2
@@ -125,13 +181,22 @@ class TrainConfig(DefaultTrainingConfig):
                 key=jax.random.PRNGKey(0),
                 sample=env.observation_space.sample(),
                 image_keys=self.classifier_keys,
-                checkpoint_path=os.path.abspath("classifier_ckpt/"),
+            checkpoint_path="/home/user/hzh/hil-serl/examples/experiments/usb_pickup_insertion/classifier_ckpt",
             )
 
+            # def reward_func(obs):
+            #     sigmoid = lambda x: 1 / (1 + jnp.exp(-x))
+            #     return int(sigmoid(classifier(obs)) > 0.7 and obs["state"][0, 0] > 0.4)
             def reward_func(obs):
                 sigmoid = lambda x: 1 / (1 + jnp.exp(-x))
-                return int(sigmoid(classifier(obs)) > 0.7 and obs["state"][0, 0] > 0.4)
-
+                prob = sigmoid(classifier(obs))
+                gripper_state = obs["state"][0, 0]
+                
+                # gripper > 0.05 表示夹爪张开（USB 已插入并松手）
+                is_success = jnp.logical_and(prob > 0.9, gripper_state > 0.075)
+                print('prob:', prob, 'gripper_state', gripper_state)
+                return int(is_success.item())
+            
             env = MultiCameraBinaryRewardClassifierWrapper(env, reward_func)
         env = GripperPenaltyWrapper(env, penalty=-0.02)
         return env

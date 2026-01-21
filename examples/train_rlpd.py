@@ -97,9 +97,10 @@ def actor(agent, data_store, intvn_data_store, env, sampling_rng):
 
                 if done:
                     if reward:
+                        
                         dt = time.time() - start_time
                         time_list.append(dt)
-                        print(dt)
+                        # print('success' + dt)
 
                     success_counter += reward
                     print(reward)
@@ -164,6 +165,7 @@ def actor(agent, data_store, intvn_data_store, env, sampling_rng):
                     argmax=False,
                 )
                 actions = np.asarray(jax.device_get(actions))
+                # print("sample_actions:", actions)
 
         # Step environment
         with timer.context("step_env"):
@@ -177,6 +179,10 @@ def actor(agent, data_store, intvn_data_store, env, sampling_rng):
             # override the action with the intervention action
             if "intervene_action" in info:
                 actions = info.pop("intervene_action")
+                # serl demo
+                # if actions.shape[0] > 7:
+                #     actions = actions[:7]
+                # print("intervene_action:", actions)
                 intervention_steps += 1
                 if not already_intervened:
                     intervention_count += 1
@@ -195,6 +201,7 @@ def actor(agent, data_store, intvn_data_store, env, sampling_rng):
             )
             if 'grasp_penalty' in info:
                 transition['grasp_penalty']= info['grasp_penalty']
+                # print("grasp_penalty: ", info['grasp_penalty'])
             data_store.insert(transition)
             transitions.append(copy.deepcopy(transition))
             if already_intervened:
@@ -202,7 +209,12 @@ def actor(agent, data_store, intvn_data_store, env, sampling_rng):
                 demo_transitions.append(copy.deepcopy(transition))
 
             obs = next_obs
+            # obs = next_obs
             if done or truncated:
+                # 成功提示
+                if reward > 0 or info.get("succeed", False):
+                    print_green(f"✓ SUCCESS! Return: {running_return}")
+                    
                 info["episode"]["intervention_count"] = intervention_count
                 info["episode"]["intervention_steps"] = intervention_steps
                 stats = {"environment": info}  # send stats to the learner to log
@@ -460,6 +472,8 @@ def main(_):
             with open(path, "rb") as f:
                 transitions = pkl.load(f)
                 for transition in transitions:
+                    # if transition['actions'].shape[-1] == 8:
+                    #     transition['actions'] = transition['actions'][:7]
                     if 'infos' in transition and 'grasp_penalty' in transition['infos']:
                         transition['grasp_penalty'] = transition['infos']['grasp_penalty']
                     demo_buffer.insert(transition)

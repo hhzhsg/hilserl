@@ -50,6 +50,7 @@ def main(_):
 
         obs = next_obs
         if done:
+            # print(f"Episode done! info['succeed']={info.get('succeed')}, rew={rew}")
             if info["succeed"]:
                 for transition in trajectory:
                     transitions.append(copy.deepcopy(transition))

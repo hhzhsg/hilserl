@@ -56,6 +56,46 @@ class SpaceMouseExpert:
         buttons = self.latest_data["buttons"]
         return np.array(action), buttons
     
+    # def _read_spacemouse(self):
+    #     while True:
+    #         state = pyspacemouse.read_all()
+    #         # 初始化为标准的 6 维列表
+    #         action = [0.0] * 6
+    #         buttons = [0, 0]
+
+    #         if len(state) > 0:
+    #             s = state[0]
+    #             # 显式构造，不使用拼接，确保只有 6 位
+    #             action = [
+    #                 float(-s.y), float(s.x), float(s.z),
+    #                 float(-s.roll), float(s.pitch), float(-s.yaw)
+    #             ]
+    #             buttons = list(s.buttons)
+
+    #         # 更新共享字典
+    #         self.latest_data["action"] = action
+    #         self.latest_data["buttons"] = buttons
+
+    # def get_action(self) -> Tuple[np.ndarray, list]:
+    #     """强制输出严格的 7 维向量"""
+    #     # 即使后台进程出错了，这里也只取前 6 位
+    #     raw_action = list(self.latest_data.get("action", [0.0]*6))
+    #     action_6d = raw_action[:6] 
+        
+    #     buttons = list(self.latest_data.get("buttons", [0, 0]))
+        
+    #     gripper_action = 0.0
+    #     if len(buttons) >= 2:
+    #         if buttons[0]: # 左键：打开
+    #             gripper_action = 1.0
+    #         elif buttons[1]: # 右键：闭合
+    #             gripper_action = -1.0
+            
+    #     # 拼接成确定的 7 维
+    #     action_7d = np.array(action_6d + [gripper_action], dtype=np.float32)
+        
+    #     return action_7d, buttons
+    
     def close(self):
         # pyspacemouse.close()
         self.process.terminate()

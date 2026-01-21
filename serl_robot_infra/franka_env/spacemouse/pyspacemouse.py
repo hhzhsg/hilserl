@@ -534,6 +534,27 @@ device_specs = {
         ],  # FIT
         axis_scale=350.0,
     ),
+    "SpaceMouse Wireless BT": DeviceSpec(
+        name="SpaceMouse Wireless BT",
+        # 你的设备 ID：0x256f, 0xc63a
+        hid_id=[0x256F, 0xC63A],
+        # LED 保持一致
+        led_id=[0x8, 0x4B],
+        # 映射逻辑：无线版通常采用 Channel 1 包含所有 6DOF 的模式
+        mappings={
+            "x": AxisSpec(channel=1, byte1=1, byte2=2, scale=1),
+            "y": AxisSpec(channel=1, byte1=3, byte2=4, scale=-1),
+            "z": AxisSpec(channel=1, byte1=5, byte2=6, scale=-1),
+            "pitch": AxisSpec(channel=1, byte1=7, byte2=8, scale=-1),
+            "roll": AxisSpec(channel=1, byte1=9, byte2=10, scale=-1),
+            "yaw": AxisSpec(channel=1, byte1=11, byte2=12, scale=1),
+        },
+        button_mapping=[
+            ButtonSpec(channel=3, byte=1, bit=0),  # 左键
+            ButtonSpec(channel=3, byte=1, bit=1),  # 右键
+        ],
+        axis_scale=350.0,
+    ),
     "3Dconnexion Universal Receiver": DeviceSpec(
         name="3Dconnexion Universal Receiver",
         # vendor ID and product ID

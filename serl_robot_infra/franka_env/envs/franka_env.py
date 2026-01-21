@@ -88,6 +88,9 @@ class FrankaEnv(gym.Env):
         set_load=False,
     ):
         self.action_scale = config.ACTION_SCALE
+        self.gripper_binary_state = 0  # 0为开，1为关
+        self.last_gripper_act = time.time()
+        self.gripper_sleep = config.GRIPPER_SLEEP
         self._TARGET_POSE = config.TARGET_POSE
         self._RESET_POSE = config.RESET_POSE
         self._REWARD_THRESHOLD = config.REWARD_THRESHOLD
@@ -208,8 +211,15 @@ class FrankaEnv(gym.Env):
 
     def step(self, action: np.ndarray) -> tuple:
         """standard gym step function."""
+        # --- 暴力防御：确保输入永远是对齐的 7 维 ---
+        if action.shape[0] > 7:
+            action = action[:7]
+        # ---------------------------------------
+
         start_time = time.time()
+        # 此时执行 clip 就不会再报 (8,) (7,) (7,) 的错误了
         action = np.clip(action, self.action_space.low, self.action_space.high)
+        
         xyz_delta = action[:3]
 
         self.nextpos = self.currpos.copy()
@@ -222,7 +232,9 @@ class FrankaEnv(gym.Env):
         ).as_quat()
 
         gripper_action = action[6] * self.action_scale[2]
-
+        # 修改前：print(f"Gripper Target: {pos}") 
+        # 修改后：使用函数内定义的 gripper_action
+        # print(f"DEBUG - Gripper Target Value: {gripper_action}")
         self._send_gripper_command(gripper_action)
         self._send_pos_command(self.clip_safety_box(self.nextpos))
 
@@ -421,21 +433,32 @@ class FrankaEnv(gym.Env):
         data = {"arr": arr.tolist()}
         requests.post(self.url + "pose", json=data)
 
+    # def _send_gripper_command(self, pos: float, mode="binary"):
+    #     """Internal function to send gripper command to the robot."""
+    #     if mode == "binary":
+    #         if (pos <= -0.5) and (self.curr_gripper_pos > 0.85) and (time.time() - self.last_gripper_act > self.gripper_sleep):  # close gripper
+    #             requests.post(self.url + "close_gripper")
+    #             self.last_gripper_act = time.time()
+    #             time.sleep(self.gripper_sleep)
+    #         elif (pos >= 0.5) and (self.curr_gripper_pos < 0.85) and (time.time() - self.last_gripper_act > self.gripper_sleep):  # open gripper
+    #             requests.post(self.url + "open_gripper")
+    #             self.last_gripper_act = time.time()
+    #             time.sleep(self.gripper_sleep)
+    #         else: 
+    #             return
+    #     elif mode == "continuous":
+    #         raise NotImplementedError("Continuous gripper control is optional")
     def _send_gripper_command(self, pos: float, mode="binary"):
-        """Internal function to send gripper command to the robot."""
         if mode == "binary":
-            if (pos <= -0.5) and (self.curr_gripper_pos > 0.85) and (time.time() - self.last_gripper_act > self.gripper_sleep):  # close gripper
+            # 参考旧版逻辑：不看物理 pos，只看逻辑 state
+            if (pos <= -0.5) and (self.gripper_binary_state == 0) and (time.time() - self.last_gripper_act > self.gripper_sleep):
                 requests.post(self.url + "close_gripper")
+                self.gripper_binary_state = 1
                 self.last_gripper_act = time.time()
-                time.sleep(self.gripper_sleep)
-            elif (pos >= 0.5) and (self.curr_gripper_pos < 0.85) and (time.time() - self.last_gripper_act > self.gripper_sleep):  # open gripper
+            elif (pos >= 0.5) and (self.gripper_binary_state == 1) and (time.time() - self.last_gripper_act > self.gripper_sleep):
                 requests.post(self.url + "open_gripper")
+                self.gripper_binary_state = 0
                 self.last_gripper_act = time.time()
-                time.sleep(self.gripper_sleep)
-            else: 
-                return
-        elif mode == "continuous":
-            raise NotImplementedError("Continuous gripper control is optional")
 
     def _update_currpos(self):
         """

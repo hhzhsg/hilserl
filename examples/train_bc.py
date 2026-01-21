@@ -32,6 +32,7 @@ flags.DEFINE_string("bc_checkpoint_path", None, "Path to save checkpoints.")
 flags.DEFINE_integer("eval_n_trajs", 0, "Number of trajectories to evaluate.")
 flags.DEFINE_integer("train_steps", 20_000, "Number of pretraining steps.")
 flags.DEFINE_bool("save_video", False, "Save video of the evaluation.")
+flags.DEFINE_multi_string("demo_path", None, "Path to demo data files. If not specified, uses demo_data/*.pkl")
 
 
 flags.DEFINE_boolean(
@@ -172,7 +173,11 @@ def main(_):
             debug=FLAGS.debug,
         )
 
-        demo_path = glob.glob(os.path.join(os.getcwd(), "demo_data", "*.pkl"))
+        # demo_path = glob.glob(os.path.join(os.getcwd(), "demo_data", "*.pkl"))
+        if FLAGS.demo_path is not None:
+            demo_path = FLAGS.demo_path
+        else:
+            demo_path = glob.glob(os.path.join(os.getcwd(), "demo_data", "*.pkl"))
         
         assert demo_path is not []
 
