@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# 环境
+.env
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# 数据和模型
+*.pkl
+*.ckpt
+checkpoints/
+wandb/
+demo_data/
+classifier_data/
+
+# 系统
+.DS_Store
+Thumbs.db
